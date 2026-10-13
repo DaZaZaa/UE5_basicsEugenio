@@ -24,10 +24,10 @@ AMyFirstActor::AMyFirstActor()
 void AMyFirstActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	OnActorBeginOverlap.AddDynamic(this, &AMyFirstActor::OnBeginOverlap);
 	OnActorEndOverlap.AddDynamic(this, &AMyFirstActor::OnEndOverlap);
-
+	
 	// Bind example
 	/*
 	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
@@ -111,6 +111,27 @@ void AMyFirstActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	GetOverlappingActors(OverlappingActors, AActor::StaticClass());
+	for(AActor* Other : OverlappingActors)
+	{
+		if (!IsValid(Other))
+		{
+			OverlappingActors.Remove(Other);
+			return;
+		}
+	}
+
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (PC->IsInputKeyDown(EKeys::P))
+		{
+			for(int i = 0; i < OverlappingActors.Num(); i++)
+			{
+				GEngine->AddOnScreenDebugMessage(i + 1, 2.f, FColor::Yellow, "Actor: " + OverlappingActors[i]->GetName());	
+			}
+		}
+	}
+	
 	//GEngine->AddOnScreenDebugMessage(896745, 2.f, FColor::Green, FString::Printf(TEXT("world time: %f"), GetWorld()->TimeSeconds));
 	//GEngine->AddOnScreenDebugMessage(8967444, 2.f, FColor::Blue, "world time: "+FString::SanitizeFloat(GetWorld()->TimeSeconds));
 }

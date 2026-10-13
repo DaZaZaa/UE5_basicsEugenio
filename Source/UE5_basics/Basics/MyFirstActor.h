@@ -38,6 +38,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta=(DisplayName="Sensed Characters"))
 	TArray<TSubclassOf<AActor>> SensedCharacterClasses = {ACharacter::StaticClass()};
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta=(DisplayName="Sensed Actors"))
+	TArray<AActor*> OverlappingActors;
+	
 	//UFUNCTION(BlueprintImplementableEvent)
 	//void OnSomethingEnter();
 
