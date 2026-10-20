@@ -26,7 +26,7 @@ public:
 	float RecoverTimer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RecoverRate;
+	int RecoverRate;
 	
 	UFUNCTION(BlueprintCallable)
 	void GetDamage(int amount);

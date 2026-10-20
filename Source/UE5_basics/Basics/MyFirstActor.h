@@ -40,12 +40,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta=(DisplayName="Sensed Actors"))
 	TArray<AActor*> OverlappingActors;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int DeltaLife;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsHealing;
 	
 	//UFUNCTION(BlueprintImplementableEvent)
 	//void OnSomethingEnter();
 
 private:
-
+	
 	UFUNCTION()
 	void BindTest();
 

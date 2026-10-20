@@ -28,6 +28,10 @@ void UTestHealthComponent::GetDamage(int amount)
 		{
 			OnHealthZero.Broadcast();
 		}
+
+		timer = 0;
+
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan, FString::FromInt(currentHealth));
 	}
 }
 
@@ -37,6 +41,8 @@ void UTestHealthComponent::HealDamage(int amount)
 	{
 		const auto ActualDamage = FMathf::Abs(amount);
 		currentHealth = FMathf::Clamp(currentHealth + ActualDamage,0, MaxHealth);
+
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan, FString::FromInt(currentHealth));
 	}
 }
 
@@ -61,14 +67,18 @@ void UTestHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (CanRecover)
+	if (CanRecover && currentHealth < MaxHealth)
 	{
-		timer = FMathf::Clamp(timer + DeltaTime, 0, RecoverTimer);
-
-		if (timer == RecoverTimer)
+		if (timer < RecoverTimer)
+		{
+			timer = FMathf::Clamp(timer + DeltaTime, 0, RecoverTimer);
+			//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("%f"), timer));
+		}
+		else
 		{
 			HealDamage(RecoverRate);
-			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "Health: " + currentHealth);
+			timer = 0;
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::FromInt(currentHealth));
 		}
 	}
 }

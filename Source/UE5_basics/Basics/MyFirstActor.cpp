@@ -3,6 +3,8 @@
 
 #include "MyFirstActor.h"
 
+#include "UE5_basics/Component/TestHealthComponent.h"
+
 // Sets default values
 AMyFirstActor::AMyFirstActor()
 {
@@ -51,6 +53,20 @@ void AMyFirstActor::OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 	{
 		if(SensedClass == OtherActorClass || OtherActorClass->IsChildOf(SensedClass))
 		{
+			UTestHealthComponent* healthComponent = OtherActor->FindComponentByClass<UTestHealthComponent>();
+
+			if (IsValid(healthComponent))
+			{
+				if (IsHealing)
+				{
+					healthComponent->HealDamage(DeltaLife);
+				}
+				else
+				{
+					healthComponent->GetDamage(DeltaLife);
+				}
+			}
+			
 			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan, "IN: "+OtherActor->GetName());
 			//OnSomethingEnter();
 			break;
