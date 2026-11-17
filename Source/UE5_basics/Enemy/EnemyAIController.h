@@ -36,6 +36,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	virtual void OnPossess(class APawn* InPawn) override;
+	
 	/** This function handle all the senses.
 	* Here are implemented all the function call to the ManageSense private functions
 	*/

@@ -6,10 +6,11 @@
 #include "EnhancedInputComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "InputMappingContext.h"
+#include "Kismet/GameplayStatics.h"
 #include "UE5_basics/Component/TestHealthComponent.h"
+#include "UE5_basics/Enemy/Enemy.h"
+#include "UE5_basics/Other/TargetActor.h"
 
 // Sets default values
 ATP_TestCharacter::ATP_TestCharacter()
@@ -49,6 +50,10 @@ ATP_TestCharacter::ATP_TestCharacter()
 
 	// configure health component
 	HealthComponent = CreateDefaultSubobject<UTestHealthComponent>(TEXT("HealthComponent"));
+
+	BallHolder = CreateDefaultSubobject<USceneComponent>(TEXT("BallHolder"));
+
+	CheckCoverRadius = 60.0f;
 }
 
 // Called when the game starts or when spawned
@@ -70,6 +75,12 @@ void ATP_TestCharacter::BeginPlay()
 		OffsetFunctionLength.BindUFunction(this, "HandleProgressCameraOffset");
 		AimTimeline.AddInterpVector(OffsetCurve, OffsetFunctionLength);
 	}
+
+	if (CrouchCurve) {
+		FOnTimelineFloat ProgressFunctionCrouch;
+		ProgressFunctionCrouch.BindUFunction(this, "HandleProgressCrouch");
+		CrouchTimeline.AddInterpFloat(CrouchCurve, ProgressFunctionCrouch);
+	}
 }
 
 // Called every frame
@@ -78,6 +89,8 @@ void ATP_TestCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	AimTimeline.TickTimeline(DeltaTime);
+
+	CrouchTimeline.TickTimeline(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -98,9 +111,15 @@ void ATP_TestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ATP_TestCharacter::AimIn);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ATP_TestCharacter::AimOut);
+
+		//Cover
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ATP_TestCharacter::ToggleCover);
 		
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATP_TestCharacter::Look);
+
+		//Shooting
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &ATP_TestCharacter::FireFromWeapon);
 	}
 }
 
@@ -188,6 +207,43 @@ void ATP_TestCharacter::HandleProgressCameraOffset(FVector Offset) {
 	CameraBoom->SocketOffset = Offset;
 }
 
+void ATP_TestCharacter::FireFromWeapon()
+{
+	FCollisionQueryParams Params;
+
+	const auto MyWorld = GetWorld();
+	if (!IsValid(MyWorld))
+	{
+		return;
+	}
+
+	Params.AddIgnoredActor(UGameplayStatics::GetPlayerPawn(MyWorld, 0));
+
+	FHitResult Hit;
+	float WeaponRange = 2000;
+
+	FVector Start = FollowCamera->GetComponentLocation();
+	FVector End = Start + (FollowCamera->GetForwardVector() * WeaponRange);
+
+	bool bhit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Camera, Params);
+	
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, true, 100, 1, 4);
+	
+	if (bhit)
+	{
+		ATargetActor* HitActor = Cast<ATargetActor>(Hit.GetActor());
+
+		if (IsValid(HitActor))
+		{
+			HitActor->IncreaseCounter();
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, "Missed");
+		}
+	}
+}
+
 void ATP_TestCharacter::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -208,3 +264,78 @@ void ATP_TestCharacter::NotifyControllerChanged()
 		}
 	}
 }
+
+void ATP_TestCharacter::CrouchCharacter()
+{
+	if (CanCrouch()) {
+		GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Crouch in"));
+		Crouch();
+		CrouchTimeline.Play();
+	}
+}
+
+void ATP_TestCharacter::StopCrouchCharacter()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Uncrouch"));
+	if (GetCharacterMovement()->IsCrouching()) {
+		UnCrouch();
+		CrouchTimeline.Reverse();
+	}
+}
+
+void ATP_TestCharacter::ToggleCover()
+{
+	bool bIsNear = CheckAroundMe(CheckCoverRadius);
+	if (bIsNear) { // Check if cover is near
+		bIsInCover = !bIsInCover;
+		// DEBUG message
+		if (bIsInCover) {
+			GEngine->AddOnScreenDebugMessage(-1, 2.2f, FColor::Green, TEXT("Cover now!"));
+		} else {
+			GEngine->AddOnScreenDebugMessage(-1, 2.2f, FColor::Green, TEXT("Not Cover now!"));
+		}
+		
+		if (bIsInCover && Cover) {			
+			FRotator CoverRotation;
+			Cover->RetrieveMovementDirectionAndFacingRotation(CoverDirectionMovement, CoverRotation);
+			SetActorRotation(CoverRotation);
+			CrouchCharacter();
+		} else {
+			ExitFromCover();
+		}
+	}
+}
+
+void ATP_TestCharacter::ExitFromCover() {
+	bIsInCover = false;
+	StopCrouchCharacter();
+}
+
+bool ATP_TestCharacter::CheckAroundMe(float Radius)
+{
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+
+	FCollisionShape CollShape = FCollisionShape::MakeSphere(Radius);
+
+	TArray<FHitResult> Hit;
+
+	FVector Pos = GetCapsuleComponent()->GetComponentLocation();
+	bool bHit = GetWorld()->SweepMultiByChannel(Hit, Pos, Pos, FQuat::Identity, ECC_Pawn, CollShape, Params);
+	//DrawDebugSphere(GetWorld(), Pos, Radius, 12, FColor::Orange, false, 0.2f);
+	
+	if (bHit) {
+		for (auto& HitActor : Hit) {
+			ACoverActor* HitCover = Cast<ACoverActor>(HitActor.GetActor());
+			if (HitCover) {
+				Cover = HitCover;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+
+
