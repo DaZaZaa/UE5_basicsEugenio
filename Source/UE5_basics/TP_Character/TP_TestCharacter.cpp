@@ -50,10 +50,6 @@ ATP_TestCharacter::ATP_TestCharacter()
 
 	// configure health component
 	HealthComponent = CreateDefaultSubobject<UTestHealthComponent>(TEXT("HealthComponent"));
-
-	BallHolder = CreateDefaultSubobject<USceneComponent>(TEXT("BallHolder"));
-
-	CheckCoverRadius = 60.0f;
 }
 
 // Called when the game starts or when spawned
@@ -75,12 +71,6 @@ void ATP_TestCharacter::BeginPlay()
 		OffsetFunctionLength.BindUFunction(this, "HandleProgressCameraOffset");
 		AimTimeline.AddInterpVector(OffsetCurve, OffsetFunctionLength);
 	}
-
-	if (CrouchCurve) {
-		FOnTimelineFloat ProgressFunctionCrouch;
-		ProgressFunctionCrouch.BindUFunction(this, "HandleProgressCrouch");
-		CrouchTimeline.AddInterpFloat(CrouchCurve, ProgressFunctionCrouch);
-	}
 }
 
 // Called every frame
@@ -89,8 +79,6 @@ void ATP_TestCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	AimTimeline.TickTimeline(DeltaTime);
-
-	CrouchTimeline.TickTimeline(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -111,9 +99,6 @@ void ATP_TestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ATP_TestCharacter::AimIn);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ATP_TestCharacter::AimOut);
-
-		//Cover
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ATP_TestCharacter::ToggleCover);
 		
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATP_TestCharacter::Look);
@@ -231,7 +216,7 @@ void ATP_TestCharacter::FireFromWeapon()
 	
 	if (bhit)
 	{
-		ATargetActor* HitActor = Cast<ATargetActor>(Hit.GetActor());
+		/*ATargetActor* HitActor = Cast<ATargetActor>(Hit.GetActor());
 
 		if (IsValid(HitActor))
 		{
@@ -240,6 +225,13 @@ void ATP_TestCharacter::FireFromWeapon()
 		else
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, "Missed");
+		}*/
+
+		UTestHealthComponent* healthComponent = Cast<UTestHealthComponent>(Hit.GetActor());
+
+		if (IsValid(healthComponent))
+		{
+			healthComponent->LoseStamina(StaminaDamage);
 		}
 	}
 }
@@ -264,78 +256,4 @@ void ATP_TestCharacter::NotifyControllerChanged()
 		}
 	}
 }
-
-void ATP_TestCharacter::CrouchCharacter()
-{
-	if (CanCrouch()) {
-		GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Crouch in"));
-		Crouch();
-		CrouchTimeline.Play();
-	}
-}
-
-void ATP_TestCharacter::StopCrouchCharacter()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 0.2f, FColor::Green, TEXT("Uncrouch"));
-	if (GetCharacterMovement()->IsCrouching()) {
-		UnCrouch();
-		CrouchTimeline.Reverse();
-	}
-}
-
-void ATP_TestCharacter::ToggleCover()
-{
-	bool bIsNear = CheckAroundMe(CheckCoverRadius);
-	if (bIsNear) { // Check if cover is near
-		bIsInCover = !bIsInCover;
-		// DEBUG message
-		if (bIsInCover) {
-			GEngine->AddOnScreenDebugMessage(-1, 2.2f, FColor::Green, TEXT("Cover now!"));
-		} else {
-			GEngine->AddOnScreenDebugMessage(-1, 2.2f, FColor::Green, TEXT("Not Cover now!"));
-		}
-		
-		if (bIsInCover && Cover) {			
-			FRotator CoverRotation;
-			Cover->RetrieveMovementDirectionAndFacingRotation(CoverDirectionMovement, CoverRotation);
-			SetActorRotation(CoverRotation);
-			CrouchCharacter();
-		} else {
-			ExitFromCover();
-		}
-	}
-}
-
-void ATP_TestCharacter::ExitFromCover() {
-	bIsInCover = false;
-	StopCrouchCharacter();
-}
-
-bool ATP_TestCharacter::CheckAroundMe(float Radius)
-{
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-
-	FCollisionShape CollShape = FCollisionShape::MakeSphere(Radius);
-
-	TArray<FHitResult> Hit;
-
-	FVector Pos = GetCapsuleComponent()->GetComponentLocation();
-	bool bHit = GetWorld()->SweepMultiByChannel(Hit, Pos, Pos, FQuat::Identity, ECC_Pawn, CollShape, Params);
-	//DrawDebugSphere(GetWorld(), Pos, Radius, 12, FColor::Orange, false, 0.2f);
-	
-	if (bHit) {
-		for (auto& HitActor : Hit) {
-			ACoverActor* HitCover = Cast<ACoverActor>(HitActor.GetActor());
-			if (HitCover) {
-				Cover = HitCover;
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-
 

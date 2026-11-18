@@ -7,7 +7,6 @@
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
-#include "UE5_basics/Other/CoverActor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "UE5_basics/Component/TestHealthComponent.h"
 #include "TP_TestCharacter.generated.h"
@@ -30,9 +29,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 	UCurveVector* OffsetCurve;
-	
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	UCurveFloat* CrouchCurve;
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -42,6 +38,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Damage")
+	int StaminaDamage;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Health")
 	UTestHealthComponent* HealthComponent;
 	
@@ -56,18 +55,12 @@ protected:
 	
 	FTimeline AimTimeline;
 
-	FTimeline CrouchTimeline;
-
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	// toggle crouch
-	void CrouchCharacter();
-	void StopCrouchCharacter();
-	
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, Category="Input")
 	UInputAction* JumpAction;
@@ -91,24 +84,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	UInputAction* ShootAction;
 
-	UPROPERTY(EditAnywhere, Category="Input")
-	UInputAction* CrouchAction;
-
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	void AimIn();
 	void AimOut();
-
-	/**Enables or disables the cover mode*/
-	void ToggleCover();
-
-	/** Force the cover exit */
-	void ExitFromCover();
-
-	//check for nearby cover
-	bool CheckAroundMe(float Radius);
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -129,9 +110,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	USceneComponent* BallHolder;
-
 private:
 	UFUNCTION()
 	void HandleProgressArmLength(float Length);
@@ -141,12 +119,4 @@ private:
 
 	UFUNCTION()
 	void FireFromWeapon();
-
-	ACoverActor* Cover;
-
-	float CheckCoverRadius;
-
-	bool bIsInCover = false;
-
-	FVector CoverDirectionMovement;
 };

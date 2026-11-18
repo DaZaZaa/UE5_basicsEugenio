@@ -19,10 +19,11 @@ void ABall::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OnActorBeginOverlap.AddDynamic(this, &ABall::OnBeginOverlap);
+	//OnActorBeginOverlap.AddDynamic(this, &ABall::OnBeginOverlap);
+	SphereComponent->OnComponentHit.AddDynamic(this, &ABall::OnComponentHit);
 }
 
-void ABall::OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
+/*void ABall::OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
 	if(!IsValid(OtherActor))
 	{
@@ -44,6 +45,29 @@ void ABall::OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 			//OnSomethingEnter();
 			break;
 		}
+	}
+}*/
+
+void ABall::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
+{
+	ATP_TestCharacter* character = Cast<ATP_TestCharacter>(OtherActor);
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, character ? *character->GetName() : TEXT("NULL"));
+	
+	if (IsValid(character))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan, "BallGrab");
+		
+		Holder = character;
+
+		this->AttachToActor(Holder, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+		FVector relativeLocation = FVector(0, 90, 0);
+		
+		this->SetActorRelativeLocation(relativeLocation);
+		
+		isHeld = true;
 	}
 }
 

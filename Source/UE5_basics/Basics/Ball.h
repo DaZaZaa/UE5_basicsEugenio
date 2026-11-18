@@ -27,13 +27,18 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	//UFUNCTION()
+	//void OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
+
 	UFUNCTION()
-	void OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
+	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 private:
 
 	UPROPERTY()
-	USceneComponent* HolderLocation;
+	AActor* Holder;
+
+	bool isHeld;
 	
 public:	
 	// Called every frame

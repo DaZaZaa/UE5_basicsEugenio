@@ -20,19 +20,34 @@ public:
 	int MaxHealth = 100;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int MaxStamina = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool WasStunned;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool CanRecover;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float RecoverTimer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int RecoverRate;
+	int HealthRecover;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int StaminaRecover;
 	
 	UFUNCTION(BlueprintCallable)
 	void GetDamage(int amount);
 
 	UFUNCTION(BlueprintCallable)
 	void HealDamage(int amount);
+
+	UFUNCTION(BlueprintCallable)
+	void LoseStamina(int amount);
+
+	UFUNCTION(BlueprintCallable)
+	void GainStamina(int amount);
 
 	UPROPERTY(BlueprintAssignable)
 	FHealthDelegate OnHealthZero;
@@ -54,5 +69,7 @@ public:
 private:
 
 	int currentHealth;
-	float timer;
+	int currentStamina;
+	float healthTimer;
+	float staminaTimer;
 };

@@ -216,7 +216,7 @@ void ATP_TestCharacter2::FireFromWeapon()
 	
 	if (bhit)
 	{
-		ATargetActor* HitActor = Cast<ATargetActor>(Hit.GetActor());
+		/*ATargetActor* HitActor = Cast<ATargetActor>(Hit.GetActor());
 
 		if (IsValid(HitActor))
 		{
@@ -225,6 +225,13 @@ void ATP_TestCharacter2::FireFromWeapon()
 		else
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, "Missed");
+		}*/
+
+		UTestHealthComponent* healthComponent = Cast<UTestHealthComponent>(Hit.GetActor());
+
+		if (IsValid(healthComponent))
+		{
+			healthComponent->LoseStamina(StaminaDamage);
 		}
 	}
 }

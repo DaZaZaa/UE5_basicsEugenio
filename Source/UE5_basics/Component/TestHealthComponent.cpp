@@ -12,6 +12,8 @@ UTestHealthComponent::UTestHealthComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+	currentHealth = MaxHealth;
+	currentStamina = MaxStamina;
 	// ...
 }
 
@@ -22,14 +24,14 @@ void UTestHealthComponent::GetDamage(int amount)
 		const auto ActualDamage = FMathf::Abs(amount);
 		currentHealth = FMathf::Clamp(currentHealth - ActualDamage,0, MaxHealth);
 
-		OnDamageTaken.Broadcast();
+		/*OnDamageTaken.Broadcast();
 
 		if (currentHealth == 0)
 		{
 			OnHealthZero.Broadcast();
-		}
+		}*/
 
-		timer = 0;
+		healthTimer = 0;
 
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan, FString::FromInt(currentHealth));
 	}
@@ -46,6 +48,28 @@ void UTestHealthComponent::HealDamage(int amount)
 	}
 }
 
+void UTestHealthComponent::LoseStamina(int amount)
+{
+	if (amount != 0 && !WasStunned)
+	{
+		const auto ActualCost = FMathf::Abs(amount);
+		currentStamina = FMathf::Clamp(currentStamina - ActualCost,0, MaxStamina);
+
+		if (currentStamina == 0)
+		{
+			WasStunned = true;
+		}
+	}
+}
+
+void UTestHealthComponent::GainStamina(int amount)
+{
+	if (amount != 0)
+	{
+		const auto ActualCost = FMathf::Abs(amount);
+		currentStamina = FMathf::Clamp(currentStamina + ActualCost,0, MaxStamina);
+	}
+}
 
 int UTestHealthComponent::GetCurrentHealth()
 {
@@ -57,8 +81,6 @@ int UTestHealthComponent::GetCurrentHealth()
 void UTestHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	currentHealth = MaxHealth;
 }
 
 
@@ -69,16 +91,36 @@ void UTestHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 	if (CanRecover && currentHealth < MaxHealth)
 	{
-		if (timer < RecoverTimer)
+		if (healthTimer < RecoverTimer)
 		{
-			timer = FMathf::Clamp(timer + DeltaTime, 0, RecoverTimer);
+			healthTimer = FMathf::Clamp(healthTimer + DeltaTime, 0, RecoverTimer);
 			//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("%f"), timer));
 		}
 		else
 		{
-			HealDamage(RecoverRate);
-			timer = 0;
-			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::FromInt(currentHealth));
+			HealDamage(HealthRecover);
+			healthTimer = 0;
+			//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::FromInt(currentHealth));
+		}
+	}
+
+	if (currentStamina < MaxStamina)
+	{
+		if (staminaTimer < RecoverTimer)
+		{
+			staminaTimer = FMathf::Clamp(staminaTimer + DeltaTime, 0, RecoverTimer);
+		}
+		else
+		{
+			GainStamina(StaminaRecover);
+			staminaTimer = 0;
+
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::FromInt(currentStamina));
+			
+			if (currentStamina == MaxStamina)
+			{
+				WasStunned = false;
+			}
 		}
 	}
 }

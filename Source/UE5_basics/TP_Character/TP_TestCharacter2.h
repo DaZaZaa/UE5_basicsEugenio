@@ -38,6 +38,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Damage")
+	int StaminaDamage;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Health")
 	UTestHealthComponent* HealthComponent;
 	
@@ -106,9 +109,6 @@ public:
 	/** Handles jump pressed inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	USceneComponent* BallHolder;
 
 private:
 	UFUNCTION()
