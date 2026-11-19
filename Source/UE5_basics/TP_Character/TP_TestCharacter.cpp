@@ -170,14 +170,16 @@ void ATP_TestCharacter::DoJumpEnd()
 
 void ATP_TestCharacter::AimIn()
 {
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	bUseControllerRotationYaw = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	AimTimeline.Play();
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Purple, "Aim IN");
 }
 
 void ATP_TestCharacter::AimOut()
 {
-	GetCharacterMovement()->bOrientRotationToMovement = false;
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 	AimTimeline.Reverse();
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, "Aim OUT");
 }
